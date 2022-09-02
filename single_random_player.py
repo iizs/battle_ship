@@ -1,5 +1,5 @@
 from battleship.game import *
 from battleship.player import *
 
-game = SingleGame(RandomPlayer())
+game = SingleOffenceGame(RandomPlayer())
 game.start()

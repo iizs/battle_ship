@@ -1,6 +1,7 @@
 import logging
 import abc
 import random
+from .game import GameStatus
 
 logger = logging.getLogger(__name__)
 
@@ -9,19 +10,16 @@ class Player:
     def __init__(self):
         self.name = None
         self.__name__ = "Player"
+        self.game_status = GameStatus(10, 10)  # default
 
     @abc.abstractmethod
-    def shoot(self, player_board):
+    def shoot(self):
         pass
 
-    def game_end(self, player_board):
-        Player.print_board(player_board)
-
-    @staticmethod
-    def print_board(board):
-        # TODO make 10 as constant
-        for x in range(10):
-            print(' '.join(board[x * 10:(x + 1) * 10]))
+    def update_game_status(self, game_status: GameStatus):
+        self.game_status = game_status
+        if self.game_status.game_over:
+            game_status.print_offence_board()
 
 
 class HumanPlayer(Player):
@@ -29,10 +27,9 @@ class HumanPlayer(Player):
         super().__init__()
         self.__name__ = "HumanPlayer"
 
-    def shoot(self, player_board):
-        Player.print_board(player_board)
-        shot = input('A~J / 0~9 > ')
-        # TODO input validation
+    def shoot(self):
+        self.game_status.print_offence_board()
+        shot = input(f'Turn {self.game_status.offence_turn}: A~J / 0~9 > ')
         return shot
 
 
@@ -41,9 +38,9 @@ class RandomPlayer(Player):
         super().__init__()
         self.__name__ = "RandomPlayer"
 
-    def shoot(self, player_board):
-        Player.print_board(player_board)
-        shot = chr(random.randint(0, 9) + ord('A')) + chr(random.randint(0, 9) + ord('0'))
-        print(f'Shoot at {shot}')
+    def shoot(self):
+        self.game_status.print_offence_board()
+        shot = chr(random.randint(0, 9) + ord('A')) + f'{random.randint(1, 10)}'
+        print(f'Turn {self.game_status.offence_turn}: Shoot at {shot}')
         return shot
 

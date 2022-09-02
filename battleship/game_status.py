@@ -13,6 +13,13 @@ class GameStatus:
     MARKER_DESTROYER = '3'
     MARKER_BATTLESHIP = '4'
     MARKER_CARRIER = '5'
+    SHIPS_AND_SIZES = {
+        MARKER_PATROL_BOAT: 2,
+        MARKER_SUBMARINE: 3,
+        MARKER_DESTROYER: 3,
+        MARKER_BATTLESHIP: 4,
+        MARKER_CARRIER: 5,
+    }
 
     def __init__(self, size_x, size_y):
         self.size_x = size_x

@@ -5,8 +5,8 @@ logger = logging.getLogger(__name__)
 
 
 class GameStatus:
-    MARKER_EMPTY = '_'
-    MARKER_MISS = '.'
+    MARKER_EMPTY = '.'
+    MARKER_MISS = 'o'
     MARKER_HIT = 'X'
     MARKER_PATROL_BOAT = '1'
     MARKER_SUBMARINE = '2'
@@ -45,12 +45,14 @@ class GameStatus:
         self.offence_win = False
 
     def print_offence_board(self):
+        print('  1 2 3 4 5 6 7 8 9 10')
         for x in range(10):
-            print(' '.join(self.offence_board[x * self.size_x:(x + 1) * self.size_x]))
+            print(chr(x + ord('A')) + ' ' + ' '.join(self.offence_board[x * self.size_x:(x + 1) * self.size_x]))
 
     def print_defence_board(self):
+        print('  1 2 3 4 5 6 7 8 9 10')
         for x in range(10):
-            print(' '.join(self.defence_board[x * self.size_x:(x + 1) * self.size_x]))
+            print(chr(x + ord('A')) + ' ' + ' '.join(self.defence_board[x * self.size_x:(x + 1) * self.size_x]))
 
     def print_all_board(self):
         pass

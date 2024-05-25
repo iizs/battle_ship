@@ -23,6 +23,7 @@ class SingleOffenceGame:
         self.npc_game_status.set_defence_board(self.npc_player.place_ships())
         self.player.update_game_status(self.player_game_status)
         while not self.player_game_status.game_over:
+            self.player_game_status.print_offence_board()
             shot = self.player.shoot()
             try:
                 shot_result, ship_sunk = self.npc_game_status.add_defence_shot(shot)
@@ -31,3 +32,4 @@ class SingleOffenceGame:
                 logger.warning(e)
 
         self.player.update_game_status(self.player_game_status)
+        self.player_game_status.print_offence_board()

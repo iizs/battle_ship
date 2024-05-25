@@ -8,3 +8,7 @@ class InvalidShipPlacementException(BattleshipException):
 
 class InvalidShotException(BattleshipException):
     pass
+
+
+class QuitGameException(BattleshipException):
+    pass

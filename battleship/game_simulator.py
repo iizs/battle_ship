@@ -173,13 +173,14 @@ class SingleOffenceGameSimulator:
         self.player_game_status = None
         self.npc_game_status = None
         self.num_simulation = num_simulation
+        self.game_num = 0
 
         # pygame variables
         self.main_surface = None
         self.clock = None
 
-        self.statistics_area = StatisticsArea()
-        self.message_area = MessageArea()
+        self.statistics_area = None
+        self.message_area = None
 
     @staticmethod
     def wait_for_press_any_key():
@@ -256,8 +257,13 @@ class SingleOffenceGameSimulator:
         self.main_surface = pygame.display.set_mode(SingleOffenceGameSimulator.SCREEN_SIZE)
         self.clock = pygame.time.Clock()
 
+        self.statistics_area = StatisticsArea()
+        self.message_area = MessageArea()
+
         SingleOffenceGameSimulator.wait_for_press_any_key()
 
         for n in range(self.num_simulation):
+            self.game_num += 1
+            self.message_area.append_text(f"Game {self.game_num}")
             self.run_simulation()
             SingleOffenceGameSimulator.wait_for_press_any_key()

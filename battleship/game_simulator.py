@@ -96,6 +96,18 @@ class BoardArea(Area):
 
         self.surface.blit(self.mask_surface, (0, 0))
 
+    def convert_pos_to_board_coord(self, offset, pos):
+        x = pos[0] - (offset[0] + BoardArea.MARGIN + self.gap_between_location + self.target_width)
+        y = pos[1] - (offset[1] + BoardArea.MARGIN + self.gap_between_location + self.target_height)
+        if x < 0 or x > (self.gap_between_location + self.target_width) * self.map_size_x:
+            return None
+        if y < 0 or y > (self.gap_between_location + self.target_height) * self.map_size_y:
+            return None
+
+        coord_x = int(x / (self.gap_between_location + self.target_width)) + 1
+        coord_y = int(y / (self.gap_between_location + self.target_height)) + 1
+        return f"{chr(coord_y + ord('A') - 1)}{coord_x}"
+
 
 class StatisticsArea(Area):
     def __init__(self):
@@ -184,7 +196,7 @@ class SingleOffenceGameSimulator:
         statistics_area = StatisticsArea()
         message_area = MessageArea()
 
-        msg = None
+        left_click = None
         while True:
             # poll for events
             # pygame.QUIT event means the user clicked X to close your window
@@ -194,7 +206,8 @@ class SingleOffenceGameSimulator:
                 if event.type == pygame.QUIT:
                     raise QuitGameException()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    msg = str(event)
+                    if event.button == 1:
+                        left_click = event.pos
 
             if shot is not None:
                 try:
@@ -212,9 +225,11 @@ class SingleOffenceGameSimulator:
             statistics_area.update()
             self.main_surface.blit(statistics_area.surface, (1000, 100))
 
-            if msg is not None:
-                message_area.append_text(msg)
-                msg = None
+            if left_click is not None:
+                shot = board_area.convert_pos_to_board_coord((100, 100), left_click)
+                if shot is not None:
+                    message_area.append_text(shot)
+                left_click = None
             message_area.update()
             self.main_surface.blit(message_area.surface, (1000, 720))
 

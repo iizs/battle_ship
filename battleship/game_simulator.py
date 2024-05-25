@@ -272,4 +272,8 @@ class SingleOffenceGameSimulator:
             self.game_num += 1
             self.message_area.append_text(f"Game {self.game_num}")
             self.run_simulation()
+            if isinstance(self.player, HumanPlayer):
+                SingleOffenceGameSimulator.wait_for_press_any_key()
+
+        if not isinstance(self.player, HumanPlayer):
             SingleOffenceGameSimulator.wait_for_press_any_key()

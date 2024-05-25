@@ -31,6 +31,7 @@ class Area:
 
 
 class BoardArea(Area):
+    BACKGROUND_COLOR = 'pink'
     WIDTH = 880
     HEIGHT = 880
     MARGIN = 10
@@ -41,7 +42,7 @@ class BoardArea(Area):
         super().__init__(
             (BoardArea.WIDTH, BoardArea.HEIGHT),
             10,
-            color="pink",
+            color=BoardArea.BACKGROUND_COLOR,
             mask_color="black"
         )
         self.map_size_x = map_size_x
@@ -68,6 +69,7 @@ class BoardArea(Area):
         pygame.draw.rect(self.surface, 'gray', rect)
 
     def update(self):
+        self.surface.fill(BoardArea.BACKGROUND_COLOR)
         for x in range(1, self.map_size_x + 1):
             for y in range(1, self.map_size_y + 1):
                 self.draw_target(x, y)
@@ -109,16 +111,36 @@ class StatisticsArea(Area):
 
 
 class MessageArea(Area):
+    BACKGROUND_COLOR = 'gray'
+    MARGIN = 10
+    FONT_NAME = 'Lucida Console'
+    FONT_SIZE = 16
+    LINE_SPACING = 8
+
     def __init__(self):
         super().__init__(
             (840, 260),
             10,
-            color="gray",
+            color=MessageArea.BACKGROUND_COLOR,
             mask_color="black"
         )
+        self.messages = []
+        self.message_font = pygame.font.SysFont(MessageArea.FONT_NAME, MessageArea.FONT_SIZE)
 
     def update(self):
+        self.surface.fill(MessageArea.BACKGROUND_COLOR)
+        line_x = MessageArea.MARGIN
+        line_y = self.surface.get_size()[1]
+        for line in self.messages:
+            text = self.message_font.render(line, True, 'black')
+            line_y -= text.get_height() + MessageArea.LINE_SPACING
+            self.surface.blit(text, (line_x, line_y))
+            if line_y < 0:
+                break
         self.surface.blit(self.mask_surface, (0, 0))
+
+    def append_text(self, text):
+        self.messages.insert(0, text)
 
 
 class SingleOffenceGameSimulator:
@@ -162,13 +184,17 @@ class SingleOffenceGameSimulator:
         statistics_area = StatisticsArea()
         message_area = MessageArea()
 
+        msg = None
         while True:
             # poll for events
             # pygame.QUIT event means the user clicked X to close your window
             shot = None
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     raise QuitGameException()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    msg = str(event)
 
             if shot is not None:
                 try:
@@ -186,6 +212,9 @@ class SingleOffenceGameSimulator:
             statistics_area.update()
             self.main_surface.blit(statistics_area.surface, (1000, 100))
 
+            if msg is not None:
+                message_area.append_text(msg)
+                msg = None
             message_area.update()
             self.main_surface.blit(message_area.surface, (1000, 720))
 

@@ -2,7 +2,7 @@ import logging
 import pygame
 from .exception import *
 from .game_status import GameStatus
-from .player import RandomPlayer
+from .player import RandomPlayer, HumanPlayer
 
 logger = logging.getLogger(__name__)
 
@@ -224,19 +224,24 @@ class SingleOffenceGameSimulator:
                     self.message_area.append_text(f"You called '{shot}'")
                 left_click = None
 
+            if not isinstance(self.player, HumanPlayer):
+                shot = self.player.shoot()
+                self.message_area.append_text(f"You called '{shot}'")
+
             if shot is not None:
                 try:
                     shot_result, ship_sunk = self.npc_game_status.add_defence_shot(shot)
                     self.player_game_status.add_offence_shot(shot, shot_result, ship_sunk)
-                    shot_num += 1
-                    self.message_area.append_text(f"Turn {shot_num}")
+
+                    if self.player_game_status.game_over:
+                        self.message_area.append_text('You win!')
+                    else:
+                        shot_num += 1
+                        self.message_area.append_text(f"Turn {shot_num}")
                 except InvalidShotException as e:
                     logger.warning(e)
                     self.message_area.append_text(str(e))
                 shot = None
-
-                if self.player_game_status.game_over:
-                    self.message_area.append_text('You win!')
 
             # Draw screen
             self.main_surface.fill("black")

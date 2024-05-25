@@ -1,7 +1,7 @@
 import logging
 import abc
 import random
-from .game import GameStatus
+from .game_status import GameStatus
 
 logger = logging.getLogger(__name__)
 

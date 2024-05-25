@@ -92,7 +92,7 @@ class GameStatus:
 
         if self.defence_board[shot_idx] == GameStatus.MARKER_MISS \
                 or self.defence_board[shot_idx] == GameStatus.MARKER_HIT:
-            raise InvalidShotException(f'Duplicated shot on {shot}')
+            raise InvalidShotException(f"You have already called '{shot}'!")
 
         # Valid shot
         self.defence_shot_log.append(shot)

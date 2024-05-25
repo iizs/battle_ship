@@ -59,20 +59,26 @@ class BoardArea(Area):
         )
         self.target_font = pygame.font.SysFont(BoardArea.FONT_NAME, BoardArea.FONT_SIZE)
 
-    def draw_target(self, x, y):
+    def draw_target(self, x, y, mark):
         rect = pygame.Rect(
             BoardArea.MARGIN + x * (self.gap_between_location + self.target_width),
             BoardArea.MARGIN + y * (self.gap_between_location + self.target_height),
             self.target_width,
             self.target_height
         )
-        pygame.draw.rect(self.surface, 'gray', rect)
 
-    def update(self):
+        if mark == GameStatus.MARKER_HIT:
+            pygame.draw.rect(self.surface, 'red', rect)
+        elif mark == GameStatus.MARKER_MISS:
+            pygame.draw.rect(self.surface, 'blue', rect)
+        else:
+            pygame.draw.rect(self.surface, 'gray', rect)
+
+    def update(self, game_status):
         self.surface.fill(BoardArea.BACKGROUND_COLOR)
         for x in range(1, self.map_size_x + 1):
             for y in range(1, self.map_size_y + 1):
-                self.draw_target(x, y)
+                self.draw_target(x, y, game_status.offence_board[(y - 1) * self.map_size_y + x - 1])
 
         # Print X coordinates
         for x in range(1, self.map_size_x + 1):
@@ -172,6 +178,9 @@ class SingleOffenceGameSimulator:
         self.main_surface = None
         self.clock = None
 
+        self.statistics_area = StatisticsArea()
+        self.message_area = MessageArea()
+
     @staticmethod
     def wait_for_press_any_key():
         pygame.display.flip()
@@ -193,15 +202,14 @@ class SingleOffenceGameSimulator:
         self.player.update_game_status(self.player_game_status)
 
         board_area = BoardArea(SingleOffenceGameSimulator.SIZE_X, SingleOffenceGameSimulator.SIZE_Y)
-        statistics_area = StatisticsArea()
-        message_area = MessageArea()
 
+        shot_num = 1
+        shot = None
         left_click = None
-        while True:
+        self.message_area.append_text(f"Turn {shot_num}")
+        while not self.player_game_status.game_over:
             # poll for events
             # pygame.QUIT event means the user clicked X to close your window
-            shot = None
-
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     raise QuitGameException()
@@ -209,33 +217,39 @@ class SingleOffenceGameSimulator:
                     if event.button == 1:
                         left_click = event.pos
 
+            if left_click is not None:
+                shot = board_area.convert_pos_to_board_coord((100, 100), left_click)
+                if shot is not None:
+                    self.message_area.append_text(f"You called '{shot}'")
+                left_click = None
+
             if shot is not None:
                 try:
                     shot_result, ship_sunk = self.npc_game_status.add_defence_shot(shot)
                     self.player_game_status.add_offence_shot(shot, shot_result, ship_sunk)
+                    shot_num += 1
+                    self.message_area.append_text(f"Turn {shot_num}")
                 except InvalidShotException as e:
                     logger.warning(e)
+                    self.message_area.append_text(str(e))
+                shot = None
+
+                if self.player_game_status.game_over:
+                    self.message_area.append_text('You win!')
 
             # Draw screen
             self.main_surface.fill("black")
 
-            board_area.update()
+            board_area.update(self.player_game_status)
             self.main_surface.blit(board_area.surface, (100, 100))
 
-            statistics_area.update()
-            self.main_surface.blit(statistics_area.surface, (1000, 100))
+            self.statistics_area.update()
+            self.main_surface.blit(self.statistics_area.surface, (1000, 100))
 
-            if left_click is not None:
-                shot = board_area.convert_pos_to_board_coord((100, 100), left_click)
-                if shot is not None:
-                    message_area.append_text(shot)
-                left_click = None
-            message_area.update()
-            self.main_surface.blit(message_area.surface, (1000, 720))
+            self.message_area.update()
+            self.main_surface.blit(self.message_area.surface, (1000, 720))
 
             pygame.display.flip()
-
-        self.player.update_game_status(self.player_game_status)
 
     def start(self):
         pygame.init()
@@ -246,5 +260,4 @@ class SingleOffenceGameSimulator:
 
         for n in range(self.num_simulation):
             self.run_simulation()
-
-        SingleOffenceGameSimulator.wait_for_press_any_key()
+            SingleOffenceGameSimulator.wait_for_press_any_key()

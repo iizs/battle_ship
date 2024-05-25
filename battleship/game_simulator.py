@@ -31,15 +31,67 @@ class Area:
 
 
 class BoardArea(Area):
-    def __init__(self):
+    WIDTH = 880
+    HEIGHT = 880
+    MARGIN = 10
+    FONT_NAME = 'Lucida Console'
+    FONT_SIZE = 36
+
+    def __init__(self, map_size_x, map_size_y, gap=5):
         super().__init__(
-            (880, 880),
+            (BoardArea.WIDTH, BoardArea.HEIGHT),
             10,
             color="pink",
             mask_color="black"
         )
+        self.map_size_x = map_size_x
+        self.map_size_y = map_size_y
+        self.gap_between_location = gap
+
+        self.target_width = int(
+            (BoardArea.WIDTH - 2 * BoardArea.MARGIN - self.map_size_x * self.gap_between_location)
+            / (1 + self.map_size_x)
+        )
+        self.target_height = int(
+            (BoardArea.HEIGHT - 2 * BoardArea.MARGIN - self.map_size_y * self.gap_between_location)
+            / (1 + self.map_size_y)
+        )
+        self.target_font = pygame.font.SysFont(BoardArea.FONT_NAME, BoardArea.FONT_SIZE)
+
+    def draw_target(self, x, y):
+        rect = pygame.Rect(
+            BoardArea.MARGIN + x * (self.gap_between_location + self.target_width),
+            BoardArea.MARGIN + y * (self.gap_between_location + self.target_height),
+            self.target_width,
+            self.target_height
+        )
+        pygame.draw.rect(self.surface, 'gray', rect)
 
     def update(self):
+        for x in range(1, self.map_size_x + 1):
+            for y in range(1, self.map_size_y + 1):
+                self.draw_target(x, y)
+
+        # Print X coordinates
+        for x in range(1, self.map_size_x + 1):
+            x_text = self.target_font.render(f"{x}", True, 'black')
+            x_text_width = x_text.get_width()
+            x_text_height = x_text.get_height()
+            x_text_y = BoardArea.MARGIN + (self.target_height - x_text_height) / 2
+            x_text_x = BoardArea.MARGIN + x * (self.gap_between_location + self.target_width) + (self.target_width - x_text_width) / 2
+            self.surface.blit(x_text, (x_text_x, x_text_y))
+
+        # Print Y coordinates
+        for y in range(1, self.map_size_y + 1):
+            y_text = self.target_font.render(f"{chr(y + ord('A') - 1)}", True, 'black')
+            y_text_width = y_text.get_width()
+            y_text_height = y_text.get_height()
+
+            y_text_y = BoardArea.MARGIN + y * (self.gap_between_location + self.target_height) + (
+                        self.target_height - y_text_height) / 2
+            y_text_x = BoardArea.MARGIN + (self.target_width - y_text_width) / 2
+            self.surface.blit(y_text, (y_text_x, y_text_y))
+
         self.surface.blit(self.mask_surface, (0, 0))
 
 
@@ -106,7 +158,7 @@ class SingleOffenceGameSimulator:
         self.npc_game_status.set_defence_board(self.npc_player.place_ships())
         self.player.update_game_status(self.player_game_status)
 
-        board_area = BoardArea()
+        board_area = BoardArea(SingleOffenceGameSimulator.SIZE_X, SingleOffenceGameSimulator.SIZE_Y)
         statistics_area = StatisticsArea()
         message_area = MessageArea()
 
@@ -125,7 +177,7 @@ class SingleOffenceGameSimulator:
                 except InvalidShotException as e:
                     logger.warning(e)
 
-            # TODO draw screen
+            # Draw screen
             self.main_surface.fill("black")
 
             board_area.update()

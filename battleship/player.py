@@ -17,6 +17,10 @@ class Player:
     def shoot(self):
         pass
 
+    @abc.abstractmethod
+    def reset(self):
+        pass
+
     def place_ships(self):
         board = [GameStatus.MARKER_EMPTY] * (self.game_status.size_x * self.game_status.size_y)
 
@@ -69,14 +73,46 @@ class HumanPlayer(Player):
         shot = input(f'Turn {self.game_status.offence_turn}: A~J / 0~9 > ')
         return shot
 
+    def reset(self):
+        pass
+
 
 class RandomPlayer(Player):
     def __init__(self, console_io=False):
         super().__init__(console_io=console_io)
         self.__name__ = "RandomPlayer"
+        self.shot_candidates = None
+        self.reset()
 
     def shoot(self):
-        shot = chr(random.randint(0, 9) + ord('A')) + f'{random.randint(1, 10)}'
+        shot = self.shot_candidates.pop(0)
         if self.console_io:
             print(f'Turn {self.game_status.offence_turn}: Shoot at {shot}')
         return shot
+
+    def reset(self):
+        self.shot_candidates = []
+        for x in range(10):
+            for y in range(10):
+                self.shot_candidates.append(f"{chr(x + ord('A'))}{y + 1}")
+        random.shuffle(self.shot_candidates)
+
+
+class SequentialPlayer(Player):
+    def __init__(self, console_io=False):
+        super().__init__(console_io=console_io)
+        self.__name__ = "SequentialPlayer"
+        self.shot_candidates = None
+        self.reset()
+
+    def shoot(self):
+        shot = self.shot_candidates.pop(0)
+        if self.console_io:
+            print(f'Turn {self.game_status.offence_turn}: Shoot at {shot}')
+        return shot
+
+    def reset(self):
+        self.shot_candidates = []
+        for x in range(10):
+            for y in range(10):
+                self.shot_candidates.append(f"{chr(x + ord('A'))}{y + 1}")

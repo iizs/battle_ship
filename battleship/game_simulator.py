@@ -200,6 +200,7 @@ class SingleOffenceGameSimulator:
         self.npc_game_status = GameStatus(SingleOffenceGameSimulator.SIZE_X, SingleOffenceGameSimulator.SIZE_Y)
         self.npc_player.update_game_status(self.npc_game_status)
         self.npc_game_status.set_defence_board(self.npc_player.place_ships())
+        self.player.reset()
         self.player.update_game_status(self.player_game_status)
 
         board_area = BoardArea(SingleOffenceGameSimulator.SIZE_X, SingleOffenceGameSimulator.SIZE_Y)
@@ -234,7 +235,7 @@ class SingleOffenceGameSimulator:
                     self.player_game_status.add_offence_shot(shot, shot_result, ship_sunk)
 
                     if self.player_game_status.game_over:
-                        self.message_area.append_text('You win!')
+                        self.message_area.append_text(f"You win in {shot_num} turns!")
                     else:
                         shot_num += 1
                         self.message_area.append_text(f"Turn {shot_num}")

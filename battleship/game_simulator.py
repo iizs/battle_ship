@@ -1,5 +1,6 @@
 import logging
 import pygame
+import math
 from .exception import *
 from .game_status import GameStatus
 from .player import RandomPlayer, HumanPlayer
@@ -116,21 +117,103 @@ class BoardArea(Area):
 
 
 class StatisticsArea(Area):
+    BACKGROUND_COLOR = 'gray'
+    MARGIN = 20
+    FONT_NAME = 'Lucida Console'
+    FONT_SIZE = 12
+    LINE_WIDTH = 4
+    SUB_LINE_WIDTH = 1
+    BAR_MARGIN = 2
+
+    AREA_WIDTH = 840
+    AREA_HEIGHT = 600
+
     def __init__(self):
         super().__init__(
-            (840, 600),
+            (StatisticsArea.AREA_WIDTH, StatisticsArea.AREA_HEIGHT),
             10,
-            color="pink",
+            color=StatisticsArea.BACKGROUND_COLOR,
             mask_color="black"
         )
 
-    def update(self):
+        self.axis_font = pygame.font.SysFont(StatisticsArea.FONT_NAME, StatisticsArea.FONT_SIZE)
+        self.bar_min_index = 16
+
+    def update(self, values):
+        self.surface.fill(StatisticsArea.BACKGROUND_COLOR)
+
+        reference_text = self.axis_font.render("1,000,000", True, 'black')
+
+        bar_base_x = StatisticsArea.MARGIN + reference_text.get_width() + StatisticsArea.LINE_WIDTH
+        bar_base_y = StatisticsArea.AREA_HEIGHT \
+            - reference_text.get_height() - StatisticsArea.MARGIN - StatisticsArea.LINE_WIDTH / 2
+        num_bars = len(values) - self.bar_min_index + 1
+        bar_width = math.floor(
+            (StatisticsArea.AREA_WIDTH - 2 * StatisticsArea.MARGIN
+             - reference_text.get_width() - StatisticsArea.LINE_WIDTH) / num_bars
+        )
+
+        # X-axis
+        pygame.draw.line(
+            self.surface, 'black',
+            (StatisticsArea.MARGIN + reference_text.get_width(),
+             StatisticsArea.AREA_HEIGHT - reference_text.get_height() - StatisticsArea.MARGIN),
+            (StatisticsArea.AREA_WIDTH - StatisticsArea.MARGIN,
+             StatisticsArea.AREA_HEIGHT - reference_text.get_height() - StatisticsArea.MARGIN),
+            width=StatisticsArea.LINE_WIDTH)
+
+        x_index = [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]
+        for i in x_index:
+            text = self.axis_font.render(f"{i}", True, 'black')
+            self.surface.blit(
+                text,
+                (bar_base_x + (i - 15) * bar_width - text.get_width() / 2, bar_base_y + StatisticsArea.LINE_WIDTH)
+            )
+
+        # Y-Axis
+        pygame.draw.line(
+            self.surface, 'black',
+            (StatisticsArea.MARGIN + reference_text.get_width(),
+             StatisticsArea.MARGIN),
+            (StatisticsArea.MARGIN + reference_text.get_width(),
+             StatisticsArea.AREA_HEIGHT - reference_text.get_height() - StatisticsArea.MARGIN),
+            width=StatisticsArea.LINE_WIDTH)
+
+        y_max = 100
+        y_index = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        y_axis_length = StatisticsArea.AREA_HEIGHT - reference_text.get_height() - 2 * StatisticsArea.MARGIN
+        for i in y_index:
+            text = self.axis_font.render(f"{i}", True, 'black')
+            self.surface.blit(
+                text,
+                (bar_base_x - text.get_width() - StatisticsArea.LINE_WIDTH - StatisticsArea.BAR_MARGIN,
+                 bar_base_y - y_axis_length / y_max * i - text.get_height() / 2 + StatisticsArea.LINE_WIDTH / 2)
+            )
+            pygame.draw.line(
+                self.surface, 'black',
+                (StatisticsArea.MARGIN + reference_text.get_width(),
+                 bar_base_y - y_axis_length / y_max * i + StatisticsArea.LINE_WIDTH / 2),
+                (StatisticsArea.AREA_WIDTH - StatisticsArea.MARGIN,
+                 bar_base_y - y_axis_length / y_max * i + StatisticsArea.LINE_WIDTH / 2),
+                width=StatisticsArea.SUB_LINE_WIDTH)
+
+        # Draw bars
+        for i in range(self.bar_min_index, len(values)):
+            bar_height = y_axis_length / y_max * values[i]
+            rect = pygame.Rect(
+                bar_base_x + (i - self.bar_min_index) * bar_width + StatisticsArea.BAR_MARGIN,
+                bar_base_y - bar_height + StatisticsArea.LINE_WIDTH / 2,
+                bar_width - StatisticsArea.BAR_MARGIN,
+                bar_height
+            )
+            pygame.draw.rect(self.surface, 'red', rect)
+
         self.surface.blit(self.mask_surface, (0, 0))
 
 
 class MessageArea(Area):
     BACKGROUND_COLOR = 'gray'
-    MARGIN = 10
+    MARGIN = 20
     FONT_NAME = 'Lucida Console'
     FONT_SIZE = 16
     LINE_SPACING = 8
@@ -174,6 +257,7 @@ class SingleOffenceGameSimulator:
         self.npc_game_status = None
         self.num_simulation = num_simulation
         self.game_num = 0
+        self.win_statistics = [0] * 100
 
         # pygame variables
         self.main_surface = None
@@ -208,7 +292,7 @@ class SingleOffenceGameSimulator:
         shot_num = 1
         shot = None
         left_click = None
-        self.message_area.append_text(f"Turn {shot_num}")
+        # self.message_area.append_text(f"Turn {shot_num}")
         while not self.player_game_status.game_over:
             # poll for events
             # pygame.QUIT event means the user clicked X to close your window
@@ -221,13 +305,13 @@ class SingleOffenceGameSimulator:
 
             if left_click is not None:
                 shot = board_area.convert_pos_to_board_coord((100, 100), left_click)
-                if shot is not None:
-                    self.message_area.append_text(f"You called '{shot}'")
+                # if shot is not None:
+                #     self.message_area.append_text(f"You called '{shot}'")
                 left_click = None
 
             if not isinstance(self.player, HumanPlayer):
                 shot = self.player.shoot()
-                self.message_area.append_text(f"You called '{shot}'")
+                # self.message_area.append_text(f"You called '{shot}'")
 
             if shot is not None:
                 try:
@@ -236,9 +320,10 @@ class SingleOffenceGameSimulator:
 
                     if self.player_game_status.game_over:
                         self.message_area.append_text(f"You win in {shot_num} turns!")
+                        self.win_statistics[shot_num - 1] += 1
                     else:
                         shot_num += 1
-                        self.message_area.append_text(f"Turn {shot_num}")
+                        # self.message_area.append_text(f"Turn {shot_num}")
                 except InvalidShotException as e:
                     logger.warning(e)
                     self.message_area.append_text(str(e))
@@ -250,7 +335,7 @@ class SingleOffenceGameSimulator:
             board_area.update(self.player_game_status)
             self.main_surface.blit(board_area.surface, (100, 100))
 
-            self.statistics_area.update()
+            self.statistics_area.update(self.win_statistics)
             self.main_surface.blit(self.statistics_area.surface, (1000, 100))
 
             self.message_area.update()

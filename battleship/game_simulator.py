@@ -123,7 +123,7 @@ class StatisticsArea(Area):
     BACKGROUND_COLOR = 'gray'
     MARGIN = 20
     FONT_NAME = 'Lucida Console'
-    FONT_SIZE = 12
+    FONT_SIZE = 20
     LINE_WIDTH = 4
     SUB_LINE_WIDTH = 1
     BAR_MARGIN = 2
@@ -145,7 +145,7 @@ class StatisticsArea(Area):
     def update(self, values):
         self.surface.fill(StatisticsArea.BACKGROUND_COLOR)
 
-        reference_text = self.axis_font.render("1,000,000", True, 'black')
+        reference_text = self.axis_font.render("1,000", True, 'black')
 
         bar_base_x = StatisticsArea.MARGIN + reference_text.get_width() + StatisticsArea.LINE_WIDTH
         bar_base_y = StatisticsArea.AREA_HEIGHT \
@@ -322,7 +322,7 @@ class SingleOffenceGameSimulator:
                     self.player_game_status.add_offence_shot(shot, shot_result, ship_sunk)
 
                     if self.player_game_status.game_over:
-                        self.message_area.append_text(f"You win in {shot_num} turns!")
+                        self.message_area.append_text(f"Game {self.game_num}: You win in {shot_num} turns!")
                         self.win_statistics[shot_num - 1] += 1
                     else:
                         shot_num += 1
@@ -363,7 +363,7 @@ class SingleOffenceGameSimulator:
 
         for n in range(self.num_simulation):
             self.game_num += 1
-            self.message_area.append_text(f"Game {self.game_num}")
+            # self.message_area.append_text(f"Game {self.game_num}")
             self.run_simulation()
             if isinstance(self.player, HumanPlayer):
                 SingleOffenceGameSimulator.wait_for_press_any_key()

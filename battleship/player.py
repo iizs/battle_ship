@@ -97,8 +97,6 @@ class SequentialPlayer(Player):
 class RandomPlayer(SequentialPlayer):
     def __init__(self, console_io=False):
         super().__init__(console_io=console_io)
-        self.shot_candidates = None
-        self.reset()
 
     def reset(self):
         super().reset()

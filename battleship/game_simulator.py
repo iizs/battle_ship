@@ -5,7 +5,10 @@ from .exception import *
 from .game_status import GameStatus
 from .player import RandomPlayer, HumanPlayer
 
+FORMAT = '%(asctime)s %(message)s'
+logging.basicConfig(format=FORMAT)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class Area:
@@ -167,7 +170,7 @@ class StatisticsArea(Area):
             text = self.axis_font.render(f"{i}", True, 'black')
             self.surface.blit(
                 text,
-                (bar_base_x + (i - 15) * bar_width - text.get_width() / 2, bar_base_y + StatisticsArea.LINE_WIDTH)
+                (bar_base_x + (i - 15) * bar_width - text.get_width(), bar_base_y + StatisticsArea.LINE_WIDTH)
             )
 
         # Y-Axis
@@ -179,8 +182,8 @@ class StatisticsArea(Area):
              StatisticsArea.AREA_HEIGHT - reference_text.get_height() - StatisticsArea.MARGIN),
             width=StatisticsArea.LINE_WIDTH)
 
-        y_max = 100
-        y_index = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        y_max = 200
+        y_index = [20, 40, 60, 80, 100, 120, 140, 160, 180, 200]
         y_axis_length = StatisticsArea.AREA_HEIGHT - reference_text.get_height() - 2 * StatisticsArea.MARGIN
         for i in y_index:
             text = self.axis_font.render(f"{i}", True, 'black')
@@ -345,6 +348,11 @@ class SingleOffenceGameSimulator:
 
     def start(self):
         pygame.init()
+
+        logger.info('SingleOffenceGameSimulator starts.')
+        logger.info(f"{self.player.__name__}")
+        logger.info(f"{self.num_simulation} Games")
+
         self.main_surface = pygame.display.set_mode(SingleOffenceGameSimulator.SCREEN_SIZE)
         self.clock = pygame.time.Clock()
 
@@ -360,5 +368,8 @@ class SingleOffenceGameSimulator:
             if isinstance(self.player, HumanPlayer):
                 SingleOffenceGameSimulator.wait_for_press_any_key()
 
+        logger.info(self.win_statistics)
         if not isinstance(self.player, HumanPlayer):
             SingleOffenceGameSimulator.wait_for_press_any_key()
+
+        logger.info('SingleOffenceGameSimulator ends.')

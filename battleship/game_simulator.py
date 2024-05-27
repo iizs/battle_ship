@@ -36,8 +36,8 @@ class Area:
 
 class BoardArea(Area):
     BACKGROUND_COLOR = 'pink'
-    WIDTH = 880
-    HEIGHT = 880
+    WIDTH = 660
+    HEIGHT = 660
     MARGIN = 10
     FONT_NAME = 'Lucida Console'
     FONT_SIZE = 36
@@ -128,8 +128,8 @@ class StatisticsArea(Area):
     SUB_LINE_WIDTH = 1
     BAR_MARGIN = 2
 
-    AREA_WIDTH = 840
-    AREA_HEIGHT = 600
+    AREA_WIDTH = 1040
+    AREA_HEIGHT = 880
 
     def __init__(self):
         super().__init__(
@@ -223,7 +223,7 @@ class MessageArea(Area):
 
     def __init__(self):
         super().__init__(
-            (840, 260),
+            (660, 200),
             10,
             color=MessageArea.BACKGROUND_COLOR,
             mask_color="black"
@@ -339,10 +339,10 @@ class SingleOffenceGameSimulator:
             self.main_surface.blit(board_area.surface, (100, 100))
 
             self.statistics_area.update(self.win_statistics)
-            self.main_surface.blit(self.statistics_area.surface, (1000, 100))
+            self.main_surface.blit(self.statistics_area.surface, (780, 100))
 
             self.message_area.update()
-            self.main_surface.blit(self.message_area.surface, (1000, 720))
+            self.main_surface.blit(self.message_area.surface, (100, 780))
 
             pygame.display.flip()
 

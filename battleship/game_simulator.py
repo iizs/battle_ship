@@ -350,7 +350,7 @@ class SingleOffenceGameSimulator:
         pygame.init()
 
         logger.info('SingleOffenceGameSimulator starts.')
-        logger.info(f"{self.player.__name__}")
+        logger.info(f"{self.player.__class__.__name__}")
         logger.info(f"{self.num_simulation} Games")
 
         self.main_surface = pygame.display.set_mode(SingleOffenceGameSimulator.SCREEN_SIZE)

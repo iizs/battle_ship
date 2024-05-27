@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 class Player:
     def __init__(self, console_io=False):
         self.name = None
-        self.__name__ = "Player"
         self.game_status = GameStatus(10, 10)  # default
         self.console_io = console_io
 
@@ -67,7 +66,6 @@ class Player:
 class HumanPlayer(Player):
     def __init__(self, console_io=False):
         super().__init__(console_io=console_io)
-        self.__name__ = "HumanPlayer"
 
     def shoot(self):
         shot = input(f'Turn {self.game_status.offence_turn}: A~J / 0~9 > ')
@@ -77,31 +75,9 @@ class HumanPlayer(Player):
         pass
 
 
-class RandomPlayer(Player):
-    def __init__(self, console_io=False):
-        super().__init__(console_io=console_io)
-        self.__name__ = "RandomPlayer"
-        self.shot_candidates = None
-        self.reset()
-
-    def shoot(self):
-        shot = self.shot_candidates.pop(0)
-        if self.console_io:
-            print(f'Turn {self.game_status.offence_turn}: Shoot at {shot}')
-        return shot
-
-    def reset(self):
-        self.shot_candidates = []
-        for x in range(10):
-            for y in range(10):
-                self.shot_candidates.append(f"{chr(x + ord('A'))}{y + 1}")
-        random.shuffle(self.shot_candidates)
-
-
 class SequentialPlayer(Player):
     def __init__(self, console_io=False):
         super().__init__(console_io=console_io)
-        self.__name__ = "SequentialPlayer"
         self.shot_candidates = None
         self.reset()
 
@@ -116,3 +92,16 @@ class SequentialPlayer(Player):
         for x in range(10):
             for y in range(10):
                 self.shot_candidates.append(f"{chr(x + ord('A'))}{y + 1}")
+
+
+class RandomPlayer(SequentialPlayer):
+    def __init__(self, console_io=False):
+        super().__init__(console_io=console_io)
+        self.shot_candidates = None
+        self.reset()
+
+    def reset(self):
+        super().reset()
+        random.shuffle(self.shot_candidates)
+
+

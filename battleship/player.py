@@ -31,7 +31,7 @@ class Player:
                 if direction == 0:
                     # Horizontal (same pos_x)
                     pos_x = random.randint(0, self.game_status.size_x - 1)
-                    pos_y = random.randint(0, self.game_status.size_y - 1 - GameStatus.SHIPS_AND_SIZES[ship])
+                    pos_y = random.randint(0, self.game_status.size_y - GameStatus.SHIPS_AND_SIZES[ship])
 
                     can_be_placed = True
                     for l in range(GameStatus.SHIPS_AND_SIZES[ship]):
@@ -45,7 +45,7 @@ class Player:
 
                 else:  # direction = 1
                     # Vertical (same pos_y)
-                    pos_x = random.randint(0, self.game_status.size_x - 1 - GameStatus.SHIPS_AND_SIZES[ship])
+                    pos_x = random.randint(0, self.game_status.size_x - GameStatus.SHIPS_AND_SIZES[ship])
                     pos_y = random.randint(0, self.game_status.size_y - 1)
 
                     can_be_placed = True

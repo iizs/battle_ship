@@ -2,6 +2,7 @@ import logging
 import abc
 import random
 from .game_status import GameStatus
+from .exception import InvalidShotException
 
 logger = logging.getLogger(__name__)
 
@@ -128,3 +129,91 @@ class HuntAndTargetPlayer(RandomPlayer):
     def reset(self):
         super().reset()
         self.targets = []
+
+
+class ProbabilityPlayer(SequentialPlayer):
+    def __init__(self, console_io=False):
+        self.targets = None
+        self.alive_ships = None
+        super().__init__(console_io=console_io)
+
+    def get_max_hunting_probability_shot(self):
+        prob = [0] * (self.game_status.size_x * self.game_status.size_y)
+        for ship in self.alive_ships:
+            ship_size = self.game_status.SHIPS_AND_SIZES[ship]
+            for idx in range(self.game_status.size_x * self.game_status.size_y):
+                if self.game_status.offence_board[idx] != GameStatus.MARKER_EMPTY:
+                    continue
+                base_x, base_y = self.game_status.__idx_to_xy__(idx)
+
+                # Test Horizontal Placement
+                horizontal_available = True
+                for delta in range(1, ship_size):
+                    try:
+                        test_idx = self.game_status.__xy_to_idx__(base_x, base_y + delta)
+                    except InvalidShotException:
+                        horizontal_available = False
+                        break
+
+                    if self.game_status.offence_board[test_idx] != GameStatus.MARKER_EMPTY:
+                        horizontal_available = False
+                        break
+
+                if horizontal_available:
+                    for delta in range(0, ship_size):
+                        prob_idx = self.game_status.__xy_to_idx__(base_x, base_y + delta)
+                        prob[prob_idx] += 1
+
+                # Test Vertical Placement
+                vertical_available = True
+                for delta in range(1, ship_size):
+                    try:
+                        test_idx = self.game_status.__xy_to_idx__(base_x + delta, base_y)
+                    except InvalidShotException:
+                        vertical_available = False
+                        break
+                    if self.game_status.offence_board[test_idx] != GameStatus.MARKER_EMPTY:
+                        vertical_available = False
+                        break
+
+                if vertical_available:
+                    for delta in range(0, ship_size):
+                        prob_idx = self.game_status.__xy_to_idx__(base_x + delta, base_y)
+                        prob[prob_idx] += 1
+        max_prob = 0
+        max_prob_idx = 0
+        for idx in range(self.game_status.size_x * self.game_status.size_y):
+            if prob[idx] > max_prob:
+                max_prob_idx = idx
+                max_prob = prob[idx]
+
+        return self.game_status.__idx_to_shot__(max_prob_idx)
+
+    def shoot(self):
+        last_shot, last_shot_result = self.game_status.get_last_shot()
+        if last_shot_result == GameStatus.MARKER_HIT:
+            targets = self.game_status.get_surrounding_shots(last_shot)
+            for shot in targets:
+                if shot in self.shot_candidates and shot not in self.targets:
+                    self.targets.append(shot)
+
+        if len(self.targets) == 0:
+            shot = self.get_max_hunting_probability_shot()
+            self.shot_candidates.remove(shot)
+        else:
+            shot = self.targets.pop(0)
+            self.shot_candidates.remove(shot)
+        if self.console_io:
+            print(f'Turn {self.game_status.offence_turn}: Shoot at {shot}')
+        return shot
+
+    def reset(self):
+        super().reset()
+        self.targets = []
+        self.alive_ships = [
+            GameStatus.MARKER_PATROL_BOAT,
+            GameStatus.MARKER_SUBMARINE,
+            GameStatus.MARKER_DESTROYER,
+            GameStatus.MARKER_BATTLESHIP,
+            GameStatus.MARKER_CARRIER,
+        ]

@@ -146,6 +146,8 @@ class GameStatus:
         return True
 
     def __xy_to_idx__(self, x, y):
+        if x >= self.size_x or y >= self.size_y:
+            raise InvalidShotException(f"Invalid coordinate, ({x}, {y})")
         return x * self.size_y + y
 
     def __idx_to_xy__(self, idx):
@@ -172,7 +174,7 @@ class GameStatus:
         return x, y
 
     def __xy_to_shot__(self, x, y):
-        if x > self.size_x or y > self.size_y:
+        if x >= self.size_x or y >= self.size_y:
             raise InvalidShotException(f"Invalid coordinate, ({x}, {y})")
         return f"{chr(ord('A') + x)}{y + 1}"
 

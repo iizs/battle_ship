@@ -318,8 +318,8 @@ class SingleOffenceGameSimulator:
 
             if shot is not None:
                 try:
-                    shot_result, ship_sunk = self.npc_game_status.add_defence_shot(shot)
-                    self.player_game_status.add_offence_shot(shot, shot_result, ship_sunk)
+                    shot_result, ship_sunk, sunken_ship_type = self.npc_game_status.add_defence_shot(shot)
+                    self.player_game_status.add_offence_shot(shot, shot_result, ship_sunk, sunken_ship_type)
 
                     if self.player_game_status.game_over:
                         self.message_area.append_text(f"Game {self.game_num}: You win in {shot_num} turns!")

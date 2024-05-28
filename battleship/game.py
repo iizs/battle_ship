@@ -26,8 +26,8 @@ class SingleOffenceGame:
             self.player_game_status.print_offence_board()
             shot = self.player.shoot()
             try:
-                shot_result, ship_sunk = self.npc_game_status.add_defence_shot(shot)
-                self.player_game_status.add_offence_shot(shot, shot_result, ship_sunk)
+                shot_result, ship_sunk, sunken_ship_type = self.npc_game_status.add_defence_shot(shot)
+                self.player_game_status.add_offence_shot(shot, shot_result, ship_sunk, sunken_ship_type)
             except InvalidShotException as e:
                 logger.warning(e)
 

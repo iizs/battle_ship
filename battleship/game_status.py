@@ -62,7 +62,7 @@ class GameStatus:
             raise InvalidShipPlacementException()
         self.defence_board = board
 
-    def add_offence_shot(self, shot, result, ship_sunk):
+    def add_offence_shot(self, shot, result, ship_sunk, sunken_ship_type):
         shot_x, shot_y = self.__shot_to_xy__(shot)
         shot_idx = self.__xy_to_idx__(shot_x, shot_y)
 
@@ -100,7 +100,7 @@ class GameStatus:
         if self.defence_board[shot_idx] == GameStatus.MARKER_EMPTY:
             # Missed
             self.defence_board[shot_idx] = GameStatus.MARKER_MISS
-            return GameStatus.MARKER_MISS, False
+            return GameStatus.MARKER_MISS, False, None
 
         # Hit
         ship = self.defence_board[shot_idx]
@@ -110,13 +110,16 @@ class GameStatus:
         self.defence_ships_hp[ship] -= 1
         self.defence_hp_sum -= 1
         ship_sunk = (self.defence_ships_hp[ship] == 0)
+        sunken_ship_type = None
+        if ship_sunk:
+            sunken_ship_type = ship
 
         if self.defence_hp_sum == 0:
             self.defence_win = False
             self.offence_win = True
             self.game_over = True
 
-        return GameStatus.MARKER_HIT, ship_sunk
+        return GameStatus.MARKER_HIT, ship_sunk, sunken_ship_type
 
     def get_last_shot(self):
         if len(self.offence_shot_log) > 0:

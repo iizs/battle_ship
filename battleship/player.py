@@ -103,3 +103,28 @@ class RandomPlayer(SequentialPlayer):
         random.shuffle(self.shot_candidates)
 
 
+class HuntAndTargetPlayer(RandomPlayer):
+    def __init__(self, console_io=False):
+        self.targets = None
+        super().__init__(console_io=console_io)
+
+    def shoot(self):
+        last_shot, last_shot_result = self.game_status.get_last_shot()
+        if last_shot_result == GameStatus.MARKER_HIT:
+            targets = self.game_status.get_surrounding_shots(last_shot)
+            for shot in targets:
+                if shot in self.shot_candidates and shot not in self.targets:
+                    self.targets.append(shot)
+
+        if len(self.targets) == 0:
+            shot = self.shot_candidates.pop(0)
+        else:
+            shot = self.targets.pop(0)
+            self.shot_candidates.remove(shot)
+        if self.console_io:
+            print(f'Turn {self.game_status.offence_turn}: Shoot at {shot}')
+        return shot
+
+    def reset(self):
+        super().reset()
+        self.targets = []

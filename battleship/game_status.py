@@ -63,7 +63,7 @@ class GameStatus:
         self.defence_board = board
 
     def add_offence_shot(self, shot, result, ship_sunk):
-        shot_x, shot_y = self.__convert_shot_to_xy__(shot)
+        shot_x, shot_y = self.__shot_to_xy__(shot)
         shot_idx = self.__xy_to_idx__(shot_x, shot_y)
 
         # Something wrong
@@ -87,7 +87,7 @@ class GameStatus:
         self.offence_turn += 1
 
     def add_defence_shot(self, shot):
-        shot_x, shot_y = self.__convert_shot_to_xy__(shot)
+        shot_x, shot_y = self.__shot_to_xy__(shot)
         shot_idx = self.__xy_to_idx__(shot_x, shot_y)
 
         if self.defence_board[shot_idx] == GameStatus.MARKER_MISS \
@@ -118,6 +118,26 @@ class GameStatus:
 
         return GameStatus.MARKER_HIT, ship_sunk
 
+    def get_last_shot(self):
+        if len(self.offence_shot_log) > 0:
+            last_shot = self.offence_shot_log[-1]
+            last_shot_idx = self.__shot_to_idx__(last_shot)
+            last_shot_result = self.offence_board[last_shot_idx]
+            return last_shot, last_shot_result
+        else:
+            return None, None
+
+    def get_surrounding_shots(self, shot):
+        base_x, base_y = self.__shot_to_xy__(shot)
+        shots = []
+        for delta_x, delta_y in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+            new_x = base_x + delta_x
+            new_y = base_y + delta_y
+            if new_x < 0 or new_x >= self.size_x or new_y < 0 or new_y >= self.size_y:
+                continue
+            shots.append(self.__xy_to_shot__(new_x, new_y))
+        return shots
+
     def __verify_board__(self, board):
         # TODO implement
         return True
@@ -125,7 +145,12 @@ class GameStatus:
     def __xy_to_idx__(self, x, y):
         return x * self.size_y + y
 
-    def __convert_shot_to_xy__(self, shot: str):
+    def __idx_to_xy__(self, idx):
+        x = int(idx / self.size_y)
+        y = idx % self.size_y
+        return x, y
+
+    def __shot_to_xy__(self, shot: str):
         shot = shot.upper()
         if len(shot) < 2:
             raise InvalidShotException(f'Invalid coordinate, {shot}')
@@ -142,3 +167,16 @@ class GameStatus:
             raise InvalidShotException(f'Invalid coordinate, {shot}')
 
         return x, y
+
+    def __xy_to_shot__(self, x, y):
+        if x > self.size_x or y > self.size_y:
+            raise InvalidShotException(f"Invalid coordinate, ({x}, {y})")
+        return f"{chr(ord('A') + x)}{y + 1}"
+
+    def __idx_to_shot__(self, idx):
+        x, y = self.__idx_to_xy__(idx)
+        return self.__xy_to_shot__(x, y)
+
+    def __shot_to_idx__(self, shot):
+        x, y = self.__shot_to_xy__(shot)
+        return self.__xy_to_idx__(x, y)

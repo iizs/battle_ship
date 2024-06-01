@@ -37,7 +37,13 @@ class GameStatus:
             GameStatus.MARKER_BATTLESHIP: 4,
             GameStatus.MARKER_CARRIER: 5,
         }
-        self.offence_ships_alive = 5
+        self.offence_ships_alive = [
+            GameStatus.MARKER_PATROL_BOAT,
+            GameStatus.MARKER_SUBMARINE,
+            GameStatus.MARKER_DESTROYER,
+            GameStatus.MARKER_BATTLESHIP,
+            GameStatus.MARKER_CARRIER,
+        ]
         self.defence_hp_sum = 17
         self.offence_hp_sum = 17
         self.game_over = False
@@ -76,10 +82,10 @@ class GameStatus:
         if result == GameStatus.MARKER_HIT:
             self.offence_hp_sum -= 1
             if ship_sunk:
-                self.offence_enemy_sink_log.append(self.offence_turn)
-                self.offence_ships_alive -= 1
+                self.offence_enemy_sink_log.append((self.offence_turn, sunken_ship_type))
+                self.offence_ships_alive.remove(sunken_ship_type)
             if self.offence_hp_sum == 0:
-                assert self.offence_ships_alive == 0  # Something wrong
+                assert len(self.offence_ships_alive) == 0  # Something wrong
                 self.offence_win = True
                 self.defence_win = False
                 self.game_over = True
@@ -126,9 +132,13 @@ class GameStatus:
             last_shot = self.offence_shot_log[-1]
             last_shot_idx = self.__shot_to_idx__(last_shot)
             last_shot_result = self.offence_board[last_shot_idx]
-            return last_shot, last_shot_result
+            last_sunken_ship = None
+            if len(self.offence_enemy_sink_log) > 0 and self.offence_enemy_sink_log[-1][0] == self.offence_turn - 1:
+                last_sunken_ship = self.offence_enemy_sink_log[-1][1]
+
+            return last_shot, last_shot_result, last_sunken_ship
         else:
-            return None, None
+            return None, None, None
 
     def get_surrounding_shots(self, shot):
         base_x, base_y = self.__shot_to_xy__(shot)

@@ -35,7 +35,7 @@ class Area:
 
 
 class BoardArea(Area):
-    BACKGROUND_COLOR = 'pink'
+    BACKGROUND_COLOR = 'gray60'
     WIDTH = 660
     HEIGHT = 660
     MARGIN = 10
@@ -70,13 +70,26 @@ class BoardArea(Area):
             self.target_width,
             self.target_height
         )
+        pygame.draw.rect(self.surface, 'skyblue3', rect)
 
         if mark == GameStatus.MARKER_HIT:
-            pygame.draw.rect(self.surface, 'red', rect)
+            pygame.draw.circle(
+                self.surface,
+                'red',
+                (BoardArea.MARGIN + x * (self.gap_between_location + self.target_width) + self.target_width / 2,
+                 BoardArea.MARGIN + y * (self.gap_between_location + self.target_height) + self.target_height / 2),
+                self.target_width / 3,
+                width=10
+            )
         elif mark == GameStatus.MARKER_MISS:
-            pygame.draw.rect(self.surface, 'blue', rect)
-        else:
-            pygame.draw.rect(self.surface, 'gray', rect)
+            pygame.draw.circle(
+                self.surface,
+                'white',
+                (BoardArea.MARGIN + x * (self.gap_between_location + self.target_width) + self.target_width / 2,
+                 BoardArea.MARGIN + y * (self.gap_between_location + self.target_height) + self.target_height / 2),
+                self.target_width / 3,
+                width=10
+            )
 
     def update(self, game_status):
         self.surface.fill(BoardArea.BACKGROUND_COLOR)
@@ -215,7 +228,7 @@ class StatisticsArea(Area):
 
 
 class MessageArea(Area):
-    BACKGROUND_COLOR = 'gray'
+    BACKGROUND_COLOR = 'gray50'
     MARGIN = 20
     FONT_NAME = 'Lucida Console'
     FONT_SIZE = 16

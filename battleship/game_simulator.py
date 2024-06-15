@@ -1,4 +1,6 @@
 import logging
+import random
+
 import pygame
 import math
 from .exception import *
@@ -266,7 +268,7 @@ class SingleOffenceGameSimulator:
 
     SCREEN_SIZE = (1920, 1080)
 
-    def __init__(self, player, num_simulation=10):
+    def __init__(self, player, num_simulation=10, seed=None, tps=None):
         self.player = player
         self.npc_player = RandomPlayer()
         self.player_game_status = None
@@ -274,6 +276,8 @@ class SingleOffenceGameSimulator:
         self.num_simulation = num_simulation
         self.game_num = 0
         self.win_statistics = [0] * 100
+        self.seed = seed
+        self.tps = tps
 
         # pygame variables
         self.main_surface = None
@@ -359,6 +363,9 @@ class SingleOffenceGameSimulator:
 
             pygame.display.flip()
 
+            if self.tps is not None:
+                ms = self.clock.tick_busy_loop(self.tps)
+
     def start(self):
         pygame.init()
 
@@ -371,6 +378,9 @@ class SingleOffenceGameSimulator:
 
         self.statistics_area = StatisticsArea()
         self.message_area = MessageArea()
+
+        if self.seed is not None:
+            random.seed(self.seed)
 
         SingleOffenceGameSimulator.wait_for_press_any_key()
 

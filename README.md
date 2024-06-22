@@ -1,3 +1,12 @@
+# Requirements
+```
+pip install "numpy<2" 
+pip install tensorflow[and-cuda]==2.10.0
+pip install gymnasium
+pip install -e .
+```
+
+
 # Logs
 
 ```

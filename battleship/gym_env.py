@@ -16,6 +16,11 @@ class BattleshipEnv(gym.Env):
     ## Observation Space
     `Box(-1, 1, (10, 10), np.int8)`
     -1 means a miss, 0 means empty, and 1 means a hit
+
+    ## Rewards
+    * invalid shot: -100
+    * hit: 10
+    * miss: 0
     """
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
 
@@ -23,6 +28,12 @@ class BattleshipEnv(gym.Env):
         GameStatus.MARKER_MISS: -1,
         GameStatus.MARKER_HIT: 1,
         GameStatus.MARKER_EMPTY: 0
+    }
+
+    SHOT_REWARDS = {
+        'invalid': -100,
+        GameStatus.MARKER_HIT: 10,
+        GameStatus.MARKER_MISS: 0
     }
 
     def __init__(self, render_mode=None):
@@ -102,10 +113,11 @@ class BattleshipEnv(gym.Env):
             self.player_game_status.add_offence_shot(shot, shot_result, ship_sunk, sunken_ship_type)
         except InvalidShotException:
             self.invalid_shots += 1
+            shot_result = 'invalid'
 
         # An episode is done iff all the enemy ships sunk
         terminated = self.player_game_status.game_over
-        reward = 1 if terminated else 0  # Binary sparse rewards
+        reward = BattleshipEnv.SHOT_REWARDS[shot_result]
         observation = self._get_obs()
         info = self._get_info()
 

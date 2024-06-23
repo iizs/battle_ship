@@ -40,6 +40,7 @@ class BattleshipEnv(gym.Env):
         self.player_game_status = None
         self.enemy_game_status = None
         self.enemy_player = None
+        self.invalid_shots = 0
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
@@ -68,7 +69,9 @@ class BattleshipEnv(gym.Env):
         return np.array([np.array(xi, dtype=np.int8) for xi in obs])
 
     def _get_info(self):
-        return {}
+        return {
+            "invalid_shots": self.invalid_shots
+        }
 
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
@@ -80,6 +83,7 @@ class BattleshipEnv(gym.Env):
         self.enemy_player = RandomPlayer()
         self.enemy_player.update_game_status(self.enemy_game_status)
         self.enemy_game_status.set_defence_board(self.enemy_player.place_ships())
+        self.invalid_shots = 0
 
         observation = self._get_obs()
         info = self._get_info()
@@ -97,7 +101,7 @@ class BattleshipEnv(gym.Env):
             shot_result, ship_sunk, sunken_ship_type = self.enemy_game_status.add_defence_shot(shot)
             self.player_game_status.add_offence_shot(shot, shot_result, ship_sunk, sunken_ship_type)
         except InvalidShotException:
-            pass
+            self.invalid_shots += 1
 
         # An episode is done iff all the enemy ships sunk
         terminated = self.player_game_status.game_over

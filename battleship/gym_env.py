@@ -2,38 +2,44 @@ import numpy as np
 import pygame
 import gymnasium as gym
 from gymnasium import spaces
+from battleship.game_status import GameStatus
+from battleship.game_simulator import BoardArea
+from battleship.player import RandomPlayer
+from battleship.exception import InvalidShotException
 
 
-class GridWorldEnv(gym.Env):
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
+class BattleshipEnv(gym.Env):
+    """
+    ## Action Space
+    The action shape is `(1,)` in the range `{0, 99}` indicating x, y coord of a shot
 
-    def __init__(self, render_mode=None, size=5):
-        self.size = size  # The size of the square grid
-        self.window_size = 512  # The size of the PyGame window
+    ## Observation Space
+    `Box(-1, 1, (10, 10), np.int8)`
+    -1 means a miss, 0 means empty, and 1 means a hit
+    """
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
 
-        # Observations are dictionaries with the agent's and the target's location.
-        # Each location is encoded as an element of {0, ..., `size`}^2, i.e. MultiDiscrete([size, size]).
-        self.observation_space = spaces.Dict(
-            {
-                "agent": spaces.Box(0, size - 1, shape=(2,), dtype=int),
-                "target": spaces.Box(0, size - 1, shape=(2,), dtype=int),
-            }
+    MARKER_TO_VALUE = {
+        GameStatus.MARKER_MISS: -1,
+        GameStatus.MARKER_HIT: 1,
+        GameStatus.MARKER_EMPTY: 0
+    }
+
+    def __init__(self, render_mode=None):
+        self.window_size = 660  # The size of the PyGame window
+
+        self.observation_space = spaces.Box(
+            low=-1,
+            high=1,
+            shape=(10, 10),
+            dtype=np.int8
         )
 
-        # We have 4 actions, corresponding to "right", "up", "left", "down"
-        self.action_space = spaces.Discrete(4)
+        self.action_space = spaces.Discrete(100)
 
-        """
-        The following dictionary maps abstract actions from `self.action_space` to
-        the direction we will walk in if that action is taken.
-        I.e. 0 corresponds to "right", 1 to "up" etc.
-        """
-        self._action_to_direction = {
-            0: np.array([1, 0]),
-            1: np.array([0, 1]),
-            2: np.array([-1, 0]),
-            3: np.array([0, -1]),
-        }
+        self.player_game_status = None
+        self.enemy_game_status = None
+        self.enemy_player = None
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
@@ -41,7 +47,7 @@ class GridWorldEnv(gym.Env):
         """
         If human-rendering is used, `self.window` will be a reference
         to the window that we draw to. `self.clock` will be a clock that is used
-        to ensure that the environment is rendered at the correct framerate in
+        to ensure that the environment is rendered at the correct frame rate in
         human-mode. They will remain `None` until human-mode is used for the
         first time.
         """
@@ -49,28 +55,31 @@ class GridWorldEnv(gym.Env):
         self.clock = None
 
     def _get_obs(self):
-        return {"agent": self._agent_location, "target": self._target_location}
+        assert self.player_game_status is not None, "Call reset to get observations"
+
+        obs = []
+        for x in range(0, 10):
+            row = []
+            for y in range(0, 10):
+                val = self.player_game_status.offence_board[y * 10 + x]
+                row.append(BattleshipEnv.MARKER_TO_VALUE[val])
+            obs.append(row)
+
+        return obs
 
     def _get_info(self):
-        return {
-            "distance": np.linalg.norm(
-                self._agent_location - self._target_location, ord=1
-            )
-        }
+        return {}
 
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
         super().reset(seed=seed)
 
-        # Choose the agent's location uniformly at random
-        self._agent_location = self.np_random.integers(0, self.size, size=2, dtype=int)
-
-        # We will sample the target's location randomly until it does not coincide with the agent's location
-        self._target_location = self._agent_location
-        while np.array_equal(self._target_location, self._agent_location):
-            self._target_location = self.np_random.integers(
-                0, self.size, size=2, dtype=int
-            )
+        # Reset game status
+        self.player_game_status = GameStatus(10, 10)
+        self.enemy_game_status = GameStatus(10, 10)
+        self.enemy_player = RandomPlayer()
+        self.enemy_player.update_game_status(self.enemy_game_status)
+        self.enemy_game_status.set_defence_board(self.enemy_player.place_ships())
 
         observation = self._get_obs()
         info = self._get_info()
@@ -81,14 +90,17 @@ class GridWorldEnv(gym.Env):
         return observation, info
 
     def step(self, action):
-        # Map the action (element of {0,1,2,3}) to the direction we walk in
-        direction = self._action_to_direction[action]
-        # We use `np.clip` to make sure we don't leave the grid
-        self._agent_location = np.clip(
-            self._agent_location + direction, 0, self.size - 1
-        )
-        # An episode is done iff the agent has reached the target
-        terminated = np.array_equal(self._agent_location, self._target_location)
+        shot = self.player_game_status.__idx_to_shot__(action)
+
+        # Update game status with the shot
+        try:
+            shot_result, ship_sunk, sunken_ship_type = self.enemy_game_status.add_defence_shot(shot)
+            self.player_game_status.add_offence_shot(shot, shot_result, ship_sunk, sunken_ship_type)
+        except InvalidShotException:
+            pass
+
+        # An episode is done iff all the enemy ships sunk
+        terminated = self.player_game_status.game_over
         reward = 1 if terminated else 0  # Binary sparse rewards
         observation = self._get_obs()
         info = self._get_info()
@@ -112,49 +124,12 @@ class GridWorldEnv(gym.Env):
         if self.clock is None and self.render_mode == "human":
             self.clock = pygame.time.Clock()
 
-        canvas = pygame.Surface((self.window_size, self.window_size))
-        canvas.fill((255, 255, 255))
-        pix_square_size = (
-                self.window_size / self.size
-        )  # The size of a single grid square in pixels
-
-        # First we draw the target
-        pygame.draw.rect(
-            canvas,
-            (255, 0, 0),
-            pygame.Rect(
-                pix_square_size * self._target_location,
-                (pix_square_size, pix_square_size),
-            ),
-        )
-        # Now we draw the agent
-        pygame.draw.circle(
-            canvas,
-            (0, 0, 255),
-            (self._agent_location + 0.5) * pix_square_size,
-            pix_square_size / 3,
-        )
-
-        # Finally, add some gridlines
-        for x in range(self.size + 1):
-            pygame.draw.line(
-                canvas,
-                0,
-                (0, pix_square_size * x),
-                (self.window_size, pix_square_size * x),
-                width=3,
-            )
-            pygame.draw.line(
-                canvas,
-                0,
-                (pix_square_size * x, 0),
-                (pix_square_size * x, self.window_size),
-                width=3,
-            )
+        board_area = BoardArea(10, 10)
+        board_area.update(self.player_game_status)
 
         if self.render_mode == "human":
             # The following line copies our drawings from `canvas` to the visible window
-            self.window.blit(canvas, canvas.get_rect())
+            self.window.blit(board_area.surface, (0, 0))
             pygame.event.pump()
             pygame.display.update()
 
@@ -163,7 +138,7 @@ class GridWorldEnv(gym.Env):
             self.clock.tick(self.metadata["render_fps"])
         else:  # rgb_array
             return np.transpose(
-                np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2)
+                np.array(pygame.surfarray.pixels3d(board_area.surface)), axes=(1, 0, 2)
             )
 
     def close(self):

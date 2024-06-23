@@ -4,7 +4,7 @@ from collections import defaultdict
 import numpy as np
 from tqdm import tqdm
 
-env = gym.make('battleship/GridWorld-v0', render_mode="human")
+env = gym.make('battleship/BattleshipEnv-v0', render_mode="human")
 
 
 class Agent:

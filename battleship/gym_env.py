@@ -65,7 +65,7 @@ class BattleshipEnv(gym.Env):
                 row.append(BattleshipEnv.MARKER_TO_VALUE[val])
             obs.append(row)
 
-        return obs
+        return np.array([np.array(xi, dtype=np.int8) for xi in obs])
 
     def _get_info(self):
         return {}

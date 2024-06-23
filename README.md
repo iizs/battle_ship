@@ -6,6 +6,13 @@ pip install gymnasium
 pip install -e .
 ```
 
+# References
+
+* Basic Gymnasium Agent: Solving Blackjack with Q-Learning
+  * https://gymnasium.farama.org/tutorials/training_agents/blackjack_tutorial/
+* Make your own custom environment
+  * https://gymnasium.farama.org/tutorials/gymnasium_basics/environment_creation/#sphx-glr-tutorials-gymnasium-basics-environment-creation-py
+  
 
 # Logs
 

@@ -195,3 +195,7 @@ class GameStatus:
     def __shot_to_idx__(self, shot):
         x, y = self.__shot_to_xy__(shot)
         return self.__xy_to_idx__(x, y)
+
+    @staticmethod
+    def __board_to_str__(board):
+        return ''.join(board)

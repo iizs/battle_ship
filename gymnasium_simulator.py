@@ -3,11 +3,19 @@ import gymnasium as gym
 from collections import defaultdict
 import numpy as np
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
-env = gym.make('battleship/BattleshipEnv-v0', render_mode="human")
+env = gym.make('battleship/BattleshipEnv-v0', render_mode="rgb_array")
 
 
 class Agent:
+    @staticmethod
+    def __observation_to_str__(obs):
+        s = ''
+        for row in obs:
+            s += ''.join([str(e) for e in row])
+        return s
+
     def __init__(
         self,
         learning_rate: float,
@@ -37,7 +45,7 @@ class Agent:
 
         self.training_error = []
 
-    def get_action(self, obs: tuple[int, int, bool]) -> int:
+    def get_action(self, obs) -> int:
         """
         Returns the best action with probability (1 - epsilon)
         otherwise a random action with probability epsilon to ensure exploration.
@@ -48,24 +56,24 @@ class Agent:
 
         # with probability (1 - epsilon) act greedily (exploit)
         else:
-            return int(np.argmax(self.q_values[str(obs)]))
+            return int(np.argmax(self.q_values[Agent.__observation_to_str__(obs)]))
 
     def update(
         self,
-        obs: tuple[int, int, bool],
+        obs,
         action: int,
         reward: float,
         terminated: bool,
-        next_obs: tuple[int, int, bool],
+        next_obs,
     ):
         """Updates the Q-value of an action."""
-        future_q_value = (not terminated) * np.max(self.q_values[str(next_obs)])
+        future_q_value = (not terminated) * np.max(self.q_values[Agent.__observation_to_str__(next_obs)])
         temporal_difference = (
-            reward + self.discount_factor * future_q_value - self.q_values[str(obs)][action]
+            reward + self.discount_factor * future_q_value - self.q_values[Agent.__observation_to_str__(obs)][action]
         )
 
-        self.q_values[str(obs)][action] = (
-            self.q_values[str(obs)][action] + self.lr * temporal_difference
+        self.q_values[Agent.__observation_to_str__(obs)][action] = (
+            self.q_values[Agent.__observation_to_str__(obs)][action] + self.lr * temporal_difference
         )
         self.training_error.append(temporal_difference)
 
@@ -104,3 +112,32 @@ for episode in tqdm(range(n_episodes)):
         obs = next_obs
 
     agent.decay_epsilon()
+
+
+rolling_length = 500
+fig, axs = plt.subplots(ncols=3, figsize=(12, 5))
+axs[0].set_title("Episode rewards")
+# compute and assign a rolling average of the data to provide a smoother graph
+reward_moving_average = (
+    np.convolve(
+        np.array(env.return_queue).flatten(), np.ones(rolling_length), mode="valid"
+    )
+    / rolling_length
+)
+axs[0].plot(range(len(reward_moving_average)), reward_moving_average)
+axs[1].set_title("Episode lengths")
+length_moving_average = (
+    np.convolve(
+        np.array(env.length_queue).flatten(), np.ones(rolling_length), mode="same"
+    )
+    / rolling_length
+)
+axs[1].plot(range(len(length_moving_average)), length_moving_average)
+axs[2].set_title("Training Error")
+training_error_moving_average = (
+    np.convolve(np.array(agent.training_error), np.ones(rolling_length), mode="same")
+    / rolling_length
+)
+axs[2].plot(range(len(training_error_moving_average)), training_error_moving_average)
+plt.tight_layout()
+plt.show()

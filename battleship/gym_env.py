@@ -31,8 +31,8 @@ class BattleshipEnv(gym.Env):
     }
 
     SHOT_REWARDS = {
-        'invalid': -100,
-        GameStatus.MARKER_HIT: 10,
+        'invalid': -10,
+        GameStatus.MARKER_HIT: 50,
         GameStatus.MARKER_MISS: 0
     }
 
@@ -52,6 +52,7 @@ class BattleshipEnv(gym.Env):
         self.enemy_game_status = None
         self.enemy_player = None
         self.invalid_shots = 0
+        self.shots = 0
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
@@ -95,6 +96,7 @@ class BattleshipEnv(gym.Env):
         self.enemy_player.update_game_status(self.enemy_game_status)
         self.enemy_game_status.set_defence_board(self.enemy_player.place_ships())
         self.invalid_shots = 0
+        self.shots = 0
 
         observation = self._get_obs()
         info = self._get_info()
@@ -112,11 +114,14 @@ class BattleshipEnv(gym.Env):
             shot_result, ship_sunk, sunken_ship_type = self.enemy_game_status.add_defence_shot(shot)
             self.player_game_status.add_offence_shot(shot, shot_result, ship_sunk, sunken_ship_type)
         except InvalidShotException:
-            self.invalid_shots += 1
             shot_result = 'invalid'
 
         # An episode is done iff all the enemy ships sunk
+        self.shots += 1
+        if shot_result == 'invalid':
+            self.invalid_shots += 1
         terminated = self.player_game_status.game_over
+        truncated = not terminated and self.shots >= 100
         reward = BattleshipEnv.SHOT_REWARDS[shot_result]
         observation = self._get_obs()
         info = self._get_info()
@@ -124,7 +129,7 @@ class BattleshipEnv(gym.Env):
         if self.render_mode == "human":
             self._render_frame()
 
-        return observation, reward, terminated, False, info
+        return observation, reward, terminated, truncated, info
 
     def render(self):
         if self.render_mode == "rgb_array":

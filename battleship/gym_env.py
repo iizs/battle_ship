@@ -31,8 +31,8 @@ class BattleshipEnv(gym.Env):
     }
 
     SHOT_REWARDS = {
-        'invalid': -10,
-        GameStatus.MARKER_HIT: 50,
+        'invalid': -1,
+        GameStatus.MARKER_HIT: 1,
         GameStatus.MARKER_MISS: 0
     }
 
@@ -123,6 +123,8 @@ class BattleshipEnv(gym.Env):
         terminated = self.player_game_status.game_over
         truncated = not terminated and self.shots >= 100
         reward = BattleshipEnv.SHOT_REWARDS[shot_result]
+        if terminated:
+            reward += 1000
         observation = self._get_obs()
         info = self._get_info()
 

@@ -50,13 +50,16 @@ class Agent:
         Returns the best action with probability (1 - epsilon)
         otherwise a random action with probability epsilon to ensure exploration.
         """
+        # TODO implement more properly
         # with probability epsilon return a random action to explore the environment
         if np.random.random() < self.epsilon:
-            return env.action_space.sample()
+            # random except minus reward
+            return np.random.choice(np.flatnonzero(self.q_values[Agent.__observation_to_str__(obs)] >= 0))
 
         # with probability (1 - epsilon) act greedily (exploit)
         else:
-            return int(np.argmax(self.q_values[Agent.__observation_to_str__(obs)]))
+            return np.random.choice(np.flatnonzero(self.q_values[Agent.__observation_to_str__(obs)] == self.q_values[Agent.__observation_to_str__(obs)].max()))
+            # return int(np.argmax(self.q_values[Agent.__observation_to_str__(obs)]))
 
     def update(
         self,
@@ -67,7 +70,8 @@ class Agent:
         next_obs,
     ):
         """Updates the Q-value of an action."""
-        future_q_value = (not terminated) * np.max(self.q_values[Agent.__observation_to_str__(next_obs)])
+        # TODO implement more properly
+        future_q_value = np.max(self.q_values[Agent.__observation_to_str__(next_obs)])
         temporal_difference = (
             reward + self.discount_factor * future_q_value - self.q_values[Agent.__observation_to_str__(obs)][action]
         )
@@ -81,8 +85,8 @@ class Agent:
         self.epsilon = max(self.final_epsilon, self.epsilon - self.epsilon_decay)
 
 # hyperparameters
-learning_rate = 0.01
-n_episodes = 100_000
+learning_rate = 1  # 0.01
+n_episodes = 10_000  # 100_000
 start_epsilon = 1.0
 epsilon_decay = start_epsilon / (n_episodes / 2)  # reduce the exploration over time
 final_epsilon = 0.1
@@ -114,7 +118,7 @@ for episode in tqdm(range(n_episodes)):
     agent.decay_epsilon()
 
 
-rolling_length = 500
+rolling_length = 100 # 500
 fig, axs = plt.subplots(ncols=3, figsize=(12, 5))
 axs[0].set_title("Episode rewards")
 # compute and assign a rolling average of the data to provide a smoother graph
